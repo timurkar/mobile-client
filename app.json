@@ -18,6 +18,10 @@
         "backgroundColor": "#212121"
       },
       "package": "com.chatgpt.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     }
   }
 }
