@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "ChatGPT Mobile",
+    "slug": "chatgpt-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#212121"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chatgpt.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#212121"
+      },
+      "package": "com.chatgpt.mobile"
+    }
+  }
+}
