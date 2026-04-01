@@ -1,22 +1,27 @@
-export async function sendChatRequest(messages, settings) {
-  const { apiKey, apiUrl, model, systemPrompt, temperature, maxTokens } = settings;
-
-  if (!apiKey) {
-    throw new Error('API ключ не указан. Перейдите в Настройки и добавьте ключ.');
+// Определяем базовый URL бекенда
+function getBackendUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    // Web — используем тот же домен (Vercel)
+    return window.location.origin;
   }
+  // Native — нужно указать URL вашего Vercel деплоя
+  return 'https://mobile-client.vercel.app';
+}
 
-  const systemMessage = { role: 'system', content: systemPrompt };
-  const apiMessages = [systemMessage, ...messages.map(m => ({ role: m.role, content: m.content }))];
+export async function sendChatRequest(messages, settings) {
+  const { model, systemPrompt, temperature, maxTokens } = settings;
 
-  const response = await fetch(apiUrl, {
+  const backendUrl = getBackendUrl();
+
+  const response = await fetch(`${backendUrl}/api/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
       model,
-      messages: apiMessages,
+      system_prompt: systemPrompt,
       temperature,
       max_tokens: maxTokens,
     }),
@@ -24,10 +29,19 @@ export async function sendChatRequest(messages, settings) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData?.error?.message || `Ошибка HTTP ${response.status}`;
-    throw new Error(errorMessage);
+    throw new Error(errorData?.error || `Ошибка сервера: HTTP ${response.status}`);
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || 'Пустой ответ от модели.';
+  return data.content;
+}
+
+export async function checkBackendHealth() {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/health`);
+    return await response.json();
+  } catch {
+    return { status: 'error', apiKeyConfigured: false };
+  }
 }

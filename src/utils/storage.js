@@ -39,8 +39,6 @@ export async function saveSettings(settings) {
 
 export function getDefaultSettings() {
   return {
-    apiKey: '',
-    apiUrl: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o',
     systemPrompt: 'You are a helpful assistant.',
     temperature: 0.7,

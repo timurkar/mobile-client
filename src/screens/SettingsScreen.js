@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ScrollView,
   TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useChat } from '../context/ChatContext';
+import { checkBackendHealth } from '../utils/api';
 import { theme } from '../utils/theme';
 
 const colors = theme.dark;
@@ -13,6 +14,11 @@ const MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'];
 export default function SettingsScreen({ navigation }) {
   const { settings, updateSettings, clearAll } = useChat();
   const [localSettings, setLocalSettings] = useState({ ...settings });
+  const [backendStatus, setBackendStatus] = useState(null);
+
+  useEffect(() => {
+    checkBackendHealth().then(setBackendStatus);
+  }, []);
 
   const update = (key, value) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
@@ -56,33 +62,35 @@ export default function SettingsScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>API Конфигурация</Text>
+        <Text style={styles.sectionTitle}>Статус сервера</Text>
 
-        <Text style={styles.label}>API Ключ</Text>
-        <TextInput
-          style={styles.input}
-          value={localSettings.apiKey}
-          onChangeText={(v) => update('apiKey', v)}
-          placeholder="sk-..."
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+        <View style={styles.statusCard}>
+          <View style={styles.statusRow}>
+            <View style={[
+              styles.statusDot,
+              { backgroundColor: backendStatus?.apiKeyConfigured ? '#22c55e' : backendStatus ? colors.danger : colors.textMuted }
+            ]} />
+            <Text style={styles.statusText}>
+              {backendStatus === null
+                ? 'Проверка...'
+                : backendStatus.apiKeyConfigured
+                  ? 'API ключ настроен ✓'
+                  : 'API ключ не настроен'}
+            </Text>
+          </View>
+          {backendStatus?.model && (
+            <Text style={styles.statusSubtext}>Модель по умолчанию: {backendStatus.model}</Text>
+          )}
+          {backendStatus && !backendStatus.apiKeyConfigured && (
+            <Text style={styles.statusHint}>
+              Добавьте переменную OPENAI_API_KEY в настройках Vercel проекта
+              (Settings → Environment Variables)
+            </Text>
+          )}
+        </View>
 
-        <Text style={styles.label}>API URL</Text>
-        <TextInput
-          style={styles.input}
-          value={localSettings.apiUrl}
-          onChangeText={(v) => update('apiUrl', v)}
-          placeholder="https://api.openai.com/v1/chat/completions"
-          placeholderTextColor={colors.placeholder}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-        />
+        <Text style={styles.sectionTitle}>Модель</Text>
 
-        <Text style={styles.label}>Модель</Text>
         <View style={styles.modelsContainer}>
           {MODELS.map((model) => (
             <TouchableOpacity
@@ -211,6 +219,41 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
     marginTop: 8,
+  },
+  statusCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 20,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  statusText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  statusSubtext: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 8,
+    marginLeft: 20,
+  },
+  statusHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginTop: 10,
+    lineHeight: 18,
   },
   label: {
     color: colors.textSecondary,
